@@ -2,18 +2,46 @@ package jwt
 
 import (
 	"chat_room/conf"
+	"log"
 	"net/http"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type UserClaims struct {
 	UserID   string
 	Username string
 	jwt.RegisteredClaims
+}
+
+type User struct {
+	UserID   string
+	UserName string
+}
+
+func CreateJWT(id string) (string, error) {
+	user := &User{
+		UserID:   id,
+		UserName: "chris",
+	}
+	myVar := "Hello, World!"
+	log.Println(myVar)
+	log.Println(id)
+	claims := UserClaims{
+		UserID:   user.UserID,
+		Username: user.UserName,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(0, 0, 7)),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			Issuer:    conf.Conf().JWT_ISSUER,
+		},
+	}
+	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return tokenClaims.SignedString([]byte(conf.Conf().JWT_SECRET))
 }
 
 func ParseJWT(token string) (*UserClaims, error) {
