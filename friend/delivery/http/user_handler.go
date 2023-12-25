@@ -1,9 +1,9 @@
 package http
 
 import (
+	"friend/domain"
 	"log"
 	"net/http"
-	"user/domain"
 	"utils/jwt"
 	"utils/password"
 
@@ -16,32 +16,34 @@ const (
 	USER_HAS_BEEN_REGISTER = 2
 )
 
-type UserHandler struct {
-	UserUsecase domain.UserUsecase
+type FriendHandler struct {
+	FriendUsecase domain.FriendUsecase
 }
 type LoginRequest struct {
-	UserName string `json:"user_name"`
-	Password string `json:"password"`
+	FriendName string `json:"friend_name"`
+	Password   string `json:"password"`
 }
 type LoginSuccess struct {
-	ID       string `json:"id,omitempty"`
-	UserName string `json:"user_name,omitempty"`
-	Token    string `json:"token,omitempty"`
+	ID         string `json:"id,omitempty"`
+	FriendName string `json:"friend_name,omitempty"`
+	Token      string `json:"token,omitempty"`
 }
 type RegisterRequest struct {
-	UserName string `json:"user_name"`
-	Password string `json:"password"`
+	FriendName string `json:"friend_name"`
+	Password   string `json:"password"`
 }
 
-func NewUserHandler(e *gin.Engine, userUsecase domain.UserUsecase) {
-	handler := &UserHandler{
-		UserUsecase: userUsecase,
+// NewDigimonHandler ...
+func NewFriendHandler(e *gin.Engine, friendUsecase domain.FriendUsecase) {
+	handler := &FriendHandler{
+		FriendUsecase: friendUsecase,
 	}
-	e.POST("/user/login", handler.Login)
-	e.POST("/user/register", handler.Register)
+	e.POST("/friend/login", handler.Login)
+	e.POST("/friend/register", handler.Register)
 }
 
-func (u *UserHandler) Login(c *gin.Context) {
+// PostToCreateDigimon ...
+func (u *FriendHandler) Login(c *gin.Context) {
 	var body LoginRequest
 	if err := c.BindJSON(&body); err != nil {
 		log.Println(err)
@@ -49,32 +51,33 @@ func (u *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := u.UserUsecase.FindByName(c, body.UserName)
+	friend, err := u.FriendUsecase.FindByName(c, body.FriendName)
 	if err != nil {
 		log.Println(err)
 		success(c, FAIL, err.Error(), nil)
 		return
 	}
-	if err := password.VerifyPassword(body.Password, user.Password); err != nil {
+	if err := password.VerifyPassword(body.Password, friend.Password); err != nil {
 		success(c, FAIL, "password wrong", nil)
 		return
 	}
 
-	token, err := jwt.CreateJWT(user.ID, user.Name)
+	token, err := jwt.CreateJWT(friend.ID, friend.Name)
 	if err != nil {
 		success(c, FAIL, err.Error(), nil)
 		return
 	}
-	user.Token = token
+	friend.Token = token
 
 	success(c, 0, "login success", LoginSuccess{
-		ID:       user.ID,
-		UserName: user.Name,
-		Token:    user.Token,
+		ID:         friend.ID,
+		FriendName: friend.Name,
+		Token:      friend.Token,
 	})
 }
 
-func (u *UserHandler) Register(c *gin.Context) {
+// PostToFosterDigimon ...
+func (u *FriendHandler) Register(c *gin.Context) {
 	var body RegisterRequest
 	if err := c.BindJSON(&body); err != nil {
 		log.Println(err)
@@ -88,19 +91,19 @@ func (u *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user := &domain.User{
-		Name:     body.UserName,
+	friend := &domain.Friend{
+		Name:     body.FriendName,
 		Password: encryptPassword,
 	}
-	_, err = u.UserUsecase.FindByName(c, user.Name)
+	_, err = u.FriendUsecase.FindByName(c, friend.Name)
 
 	if err == nil {
-		success(c, USER_HAS_BEEN_REGISTER, "user has been register", nil)
+		success(c, USER_HAS_BEEN_REGISTER, "friend has been register", nil)
 		return
 	}
 
-	user, err = u.UserUsecase.Store(c, user)
-	// no find duplicate user
+	friend, err = u.FriendUsecase.Store(c, friend)
+	// no find duplicate friend
 
 	if err != nil {
 		success(c, USER_HAS_BEEN_REGISTER, err.Error(), nil)

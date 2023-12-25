@@ -1,7 +1,6 @@
 package main
 
 import (
-	"jwt"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"utils/jwt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

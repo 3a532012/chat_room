@@ -1,10 +1,9 @@
 package jwt
 
 import (
-	"chat_room/conf"
-	"log"
 	"net/http"
 	"strings"
+	"utils/conf"
 
 	"time"
 
@@ -18,22 +17,10 @@ type UserClaims struct {
 	jwt.RegisteredClaims
 }
 
-type User struct {
-	UserID   string
-	UserName string
-}
-
-func CreateJWT(id string) (string, error) {
-	user := &User{
-		UserID:   id,
-		UserName: "chris",
-	}
-	myVar := "Hello, World!"
-	log.Println(myVar)
-	log.Println(id)
+func CreateJWT(id string, name string) (string, error) {
 	claims := UserClaims{
-		UserID:   user.UserID,
-		Username: user.UserName,
+		UserID:   id,
+		Username: name,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(0, 0, 7)),
 			NotBefore: jwt.NewNumericDate(time.Now()),
