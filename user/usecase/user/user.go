@@ -55,3 +55,36 @@ func (userUsecase *userUsecase) All(ctx context.Context) ([]*domain.User, error)
 
 	return users, nil
 }
+
+func (userUsecase *userUsecase) AddFriend(ctx context.Context, userID string, tagID string) error {
+	user, err := userUsecase.repository.FindByTagID(ctx, tagID)
+	if err != nil {
+		return err
+	}
+	if err := userUsecase.repository.AddFriend(ctx, userID, user.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (userUsecase *userUsecase) RemoveFriend(ctx context.Context, userID string, tagID string) error {
+	user, err := userUsecase.repository.FindByTagID(ctx, tagID)
+	if err != nil {
+		return err
+	}
+	if err := userUsecase.repository.RemoveFriend(ctx, userID, user.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (userUsecase *userUsecase) FindByTagID(ctx context.Context, tagID string) (*domain.User, error) {
+
+	return userUsecase.repository.FindByTagID(ctx, tagID)
+}
+func (userUsecase *userUsecase) UpdateTagID(ctx context.Context, userID string, tagID string) (*domain.User, error) {
+
+	return userUsecase.repository.UpdateTagID(ctx, userID, tagID)
+}

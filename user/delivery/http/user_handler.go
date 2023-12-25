@@ -23,6 +23,23 @@ type LoginRequest struct {
 	UserName string `json:"user_name"`
 	Password string `json:"password"`
 }
+type AddFriendRequest struct {
+	TagID string `json:"tag-id"`
+}
+type UpdateTagIDResponse struct {
+	ID       string `json:"id,omitempty"`
+	UserName string `json:"user_name,omitempty"`
+	TagID    string `json:"tag-id,omitempty"`
+}
+type FindUserByTagIDResponse struct {
+	ID       string   `json:"id,omitempty"`
+	UserName string   `json:"user_name,omitempty"`
+	Friends  []string `json:"friends,omitempty"`
+	TagID    string   `json:"tag-id,omitempty"`
+}
+type RemoveFriendRequest struct {
+	TagID string `json:"tag-id"`
+}
 type LoginSuccess struct {
 	ID       string `json:"id,omitempty"`
 	UserName string `json:"user_name,omitempty"`
@@ -37,10 +54,105 @@ func NewUserHandler(e *gin.Engine, userUsecase domain.UserUsecase) {
 	handler := &UserHandler{
 		UserUsecase: userUsecase,
 	}
+	e.POST("/user/friend", jwt.AuthenticateJWT(), handler.AddFriend)
+	e.DELETE("/user/friend", jwt.AuthenticateJWT(), handler.RemoveFriend)
+	e.PATCH("/user/:tag-id", jwt.AuthenticateJWT(), handler.UpdateTagID)
+	e.GET("/user/user/:tag-id", jwt.AuthenticateJWT(), handler.GetUserByTagID)
 	e.POST("/user/login", handler.Login)
 	e.POST("/user/register", handler.Register)
 }
+func (u *UserHandler) UpdateTagID(c *gin.Context) {
+	tagID := c.Param("tag-id")
+	claim, isExist := c.Get("jwt")
 
+	if !isExist {
+		success(c, FAIL, "jwt doesn't in header", nil)
+		return
+	}
+	user, ok := claim.(*jwt.UserClaims)
+	if !ok {
+		success(c, FAIL, "jwt format fail", nil)
+		return
+	}
+	updatedUser, err := u.UserUsecase.UpdateTagID(c, user.UserID, tagID)
+	if err != nil {
+		success(c, FAIL, err.Error(), nil)
+		return
+	}
+	success(c, 0, "update tagID success", &UpdateTagIDResponse{
+		ID:       updatedUser.ID,
+		UserName: updatedUser.Name,
+		TagID:    updatedUser.TagID,
+	})
+}
+func (u *UserHandler) GetUserByTagID(c *gin.Context) {
+	tagID := c.Param("tag-id")
+	user, err := u.UserUsecase.FindByTagID(c, tagID)
+	if err != nil {
+		success(c, FAIL, err.Error(), nil)
+		return
+	}
+	success(c, 0, "", &FindUserByTagIDResponse{
+		ID:       user.ID,
+		UserName: user.Name,
+		Friends:  user.Friends,
+		TagID:    user.TagID,
+	})
+}
+func (u *UserHandler) AddFriend(c *gin.Context) {
+	var body AddFriendRequest
+	if err := c.BindJSON(&body); err != nil {
+		log.Println(err)
+		success(c, FAIL, err.Error(), nil)
+		return
+	}
+	claim, isExist := c.Get("jwt")
+
+	if !isExist {
+		success(c, FAIL, "jwt doesn't in header", nil)
+		return
+	}
+	user, ok := claim.(*jwt.UserClaims)
+	if !ok {
+		success(c, FAIL, "jwt format fail", nil)
+		return
+	}
+	err := u.UserUsecase.AddFriend(c, user.UserID, body.TagID)
+	if err != nil {
+		log.Println(err)
+		success(c, FAIL, err.Error(), nil)
+		return
+	}
+
+	success(c, 0, "success add friend", nil)
+}
+func (u *UserHandler) RemoveFriend(c *gin.Context) {
+	var body RemoveFriendRequest
+	if err := c.BindJSON(&body); err != nil {
+		log.Println(err)
+		success(c, FAIL, err.Error(), nil)
+		return
+	}
+	claim, isExist := c.Get("jwt")
+
+	if !isExist {
+		success(c, FAIL, "jwt doesn't in header", nil)
+		return
+	}
+	user, ok := claim.(*jwt.UserClaims)
+	if !ok {
+		success(c, FAIL, "jwt format fail", nil)
+		return
+	}
+	err := u.UserUsecase.RemoveFriend(c, user.UserID, body.TagID)
+	if err != nil {
+		log.Println(err)
+		success(c, FAIL, err.Error(), nil)
+		return
+	}
+
+	success(c, 0, "success remove friend", nil)
+}
 func (u *UserHandler) Login(c *gin.Context) {
 	var body LoginRequest
 	if err := c.BindJSON(&body); err != nil {
@@ -65,12 +177,11 @@ func (u *UserHandler) Login(c *gin.Context) {
 		success(c, FAIL, err.Error(), nil)
 		return
 	}
-	user.Token = token
 
 	success(c, 0, "login success", LoginSuccess{
 		ID:       user.ID,
 		UserName: user.Name,
-		Token:    user.Token,
+		Token:    token,
 	})
 }
 
@@ -91,6 +202,7 @@ func (u *UserHandler) Register(c *gin.Context) {
 	user := &domain.User{
 		Name:     body.UserName,
 		Password: encryptPassword,
+		Friends:  make([]string, 0),
 	}
 	_, err = u.UserUsecase.FindByName(c, user.Name)
 
@@ -99,7 +211,7 @@ func (u *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, err = u.UserUsecase.Store(c, user)
+	_, err = u.UserUsecase.Store(c, user)
 	// no find duplicate user
 
 	if err != nil {

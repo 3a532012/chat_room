@@ -14,7 +14,7 @@ import (
 
 func main() {
 	log.Println("DB init ...")
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	clientOptions := options.Client().ApplyURI("mongodb://test:test@localhost:27017")
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		log.Println("Failed to connect to MongoDB:", err)
