@@ -123,7 +123,6 @@ func (u *UserHandler) AddFriend(c *gin.Context) {
 		success(c, FAIL, err.Error(), nil)
 		return
 	}
-
 	success(c, 0, "success add friend", nil)
 }
 func (u *UserHandler) RemoveFriend(c *gin.Context) {

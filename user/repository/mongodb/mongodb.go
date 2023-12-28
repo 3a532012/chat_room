@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 
 	"user/domain"
@@ -96,12 +95,10 @@ func (m *mongodbUserRepository) AddFriend(ctx context.Context, userID string, fr
 	}}
 	result, err := m.collect.UpdateOne(ctx, match, addToSet)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if result.ModifiedCount == 0 {
-		fmt.Println("Element already exists in the array.")
-	} else {
-		fmt.Println("Element added to the array.")
+		return errors.New("Element already exists in the array")
 	}
 	return nil
 }

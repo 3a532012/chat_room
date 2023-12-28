@@ -1,0 +1,12 @@
+# Stage 1: Build
+FROM golang:1.21.5 as builder
+WORKDIR /app
+COPY . .
+WORKDIR /app/user
+RUN CGO_ENABLED=0 GOOS=linux go build -o myapp
+
+# Stage 2: Final Image
+FROM alpine:latest
+WORKDIR /service
+COPY --from=builder /app/user/myapp .
+CMD ["./myapp"]

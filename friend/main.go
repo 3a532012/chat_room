@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	_friendHandlerHttpDelivery "friend/delivery/http"
+	_friendRepository "friend/repository/mongodb"
+	_friendUsecase "friend/usecase/friend"
 	"log"
-	_userHandlerHttpDelivery "user/delivery/http"
-	_userRepository "user/repository/mongodb"
-	_userUsecase "user/usecase/user"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,11 +20,11 @@ func main() {
 		log.Println("Failed to connect to MongoDB:", err)
 	}
 
-	userRepository := _userRepository.NewMongodbUserRepository(client)
-	userUsecase := _userUsecase.NewUserUsecase(userRepository)
+	friendRepository := _friendRepository.NewMongodbFriendRepository(client)
+	friendUsecase := _friendUsecase.NewFriendUsecase(friendRepository)
 
 	r := gin.Default()
-	_userHandlerHttpDelivery.NewUserHandler(r, userUsecase)
+	_friendHandlerHttpDelivery.NewFriendHandler(r, friendUsecase)
 
 	log.Fatal(r.Run())
 }
