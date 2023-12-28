@@ -1,2 +1,7 @@
-# 一對一聊天室
-# 一對一聊天室名稱命名規則為，userA.ID_userB.ID
+#User folder for user service
+
+
+#Char folder for chat service,now only avaiable one by one private chat room
+
+
+#docker-compose.yaml running db and redis and mongo-express
